@@ -1,23 +1,22 @@
-# This file presents a simple implementation of siamese networks in Keras.
+# This file presents a simple implementation of siamese networks in Keras in R.
 # It focuses solely on datapoints represented as feature vectors (e.g. Boston housing problem)
-# as oppose to typical use case with images and therefore convolutional layers.
+# as oppose to typical use case with images and convolutional layers.
+#
+# Here, I used Boston housing price regression which is a dataset readily available in Keras and
+# sourced from the StatLib library which is maintained at the Carnegie Mellon University.
+# Datapoints contain 13 features of houses in Boston in 1970s and the prices of the houses.
+# In this script, the data is pre-processed to match the siamese problem definition with learning
+# a similarity metric, i.e. the aim is to predict the difference in prices of 2 input houses.
+#
+# The training takes about 5 mins on a 4-core 4.2 GHz Intel i7 CPU
 #
 # by Kajetan Stanski, 8 Nov 2019
 
+
 library(keras)
 
+
 ### Load and pre-process data ###
-
-#Boston housing price regression dataset
-#Dataset taken from the StatLib library which is maintained at Carnegie Mellon University.
-#Samples contain 13 attributes of houses at different locations around the Boston suburbs in the late 1970s.
-#Targets are the median values of the houses at a location (in k$).
-# Descibe that the point is to predict the difference in house prices.
-# similarity between pairs of random vectors #
-
-# the training takes about 5 mins on 4.2 GHz Intel Core i7 CPU
-
-# Load the dataset directly from Keras
 boston_housing <- dataset_boston_housing()
 
 is_regression <- FALSE  # otherwise classification
@@ -62,7 +61,11 @@ left_input_vector <- layer_input(shape=c(input_vectors_length), name='x_left')
 right_input_vector <- layer_input(shape=c(input_vectors_length), name='x_right')
 
 # Add regularization factor
-reg_l2 <- 10^-2
+if (is_regression) {
+  reg_l2 <- 10^0
+} else {
+  reg_l2 <- 10^-2
+}
 no_of_layers <- 5
 base_network <- keras_model_sequential(name='base_network')
 hidden_layer <- base_network
@@ -94,18 +97,18 @@ model <- keras_model(list(left_input_vector, right_input_vector), prediction)
 model %>% summary()
 
 
-### Model Fit ###
+### Fit the model ###
 if (is_regression) {
   model %>% compile(
-    loss      = 'mean_squared_error',
-    optimizer = 'adam',
-    metrics   = c('mae')
+    loss='mean_squared_error',
+    optimizer='adam',
+    metrics=c('mae')
   )
 } else {
   model %>% compile(
-    loss      = 'binary_crossentropy',
-    optimizer = 'adam',
-    metrics   = c('accuracy')
+    loss='binary_crossentropy',
+    optimizer='adam',
+    metrics=c('accuracy')
   )
 }
 
@@ -139,7 +142,7 @@ y_right <- boston_housing$test$y[row_idx_r]
 
 print('Different vectors')
 predicted_vs_observed(x_left, y_left, x_right, y_right)
-print('Different vectors, swapped places (the output should be the same)')
+print('Different vectors, swapped places (the output should be exactly the same)')
 predicted_vs_observed(x_right, y_right, x_left, y_left)
 print('The same vector')
 predicted_vs_observed(x_left, y_left, x_left, y_left)
